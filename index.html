@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify 人気ランキング</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eaf6f1; /* 背景色を薄い緑に */
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      color: #333;
+    }
+    h1 {
+      color: #1db954; /* Spotifyのグリーンに */
+      font-size: 36px;
+      margin: 20px;
+    }
+    .search-bar {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"] {
+      padding: 12px;
+      width: 280px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-right: 10px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #1db954; /* フォーカス時に緑色に */
+      outline: none;
+    }
+    select {
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-right: 10px;
+      transition: border-color 0.3s;
+    }
+    select:focus {
+      border-color: #1db954; /* フォーカス時に緑色に */
+      outline: none;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #1db954; /* Spotifyグリーン */
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #1ed760; /* ボタンホバー時に少し明るい緑 */
+    }
+    .ranking {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .track {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin: 10px;
+      padding: 15px;
+      width: 220px;
+      background-color: #ffffff;
+      text-align: center;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .track:hover {
+      transform: translateY(-5px);
+      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+    }
+    .track img {
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .track img:hover {
+      transform: scale(1.05);
+    }
+    p {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spotify 人気ランキング</h1>
+  <div class="search-bar">
+    <select id="searchType">
+      <option value="artist">アーティスト</option>
+      <option value="track">曲名</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="検索内容を入力">
+    <button onclick="searchSpotify()">検索</button>
+  </div>
+  <div id="ranking" class="ranking"></div>
+
+  <script>
+    const CLIENT_ID = "944d4db48c1d4bdcaead9d482a9999a3"; // Spotify Developer Dashboardで取得
+    const CLIENT_SECRET = "85c04546eccc4c719522171006a64a34";
+
+    // アクセストークンを取得
+    async function getAccessToken() {
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${btoa(CLIENT_ID + ":" + CLIENT_SECRET)}`,
+        },
+        body: "grant_type=client_credentials",
+      });
+
+      const data = await response.json();
+      return data.access_token;
+    }
+
+    // Spotify検索
+    async function searchSpotify() {
+      const query = document.getElementById("searchInput").value;
+      const searchType = document.getElementById("searchType").value;
+
+      if (!query) {
+        alert("検索内容を入力してください");
+        return;
+      }
+
+      const token = await getAccessToken();
+      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${searchType}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+
+      if (searchType === "artist") {
+        if (!data.artists.items.length) {
+          alert("該当するアーティストが見つかりません");
+          return;
+        }
+        displayArtists(data.artists.items);
+      } else if (searchType === "track") {
+        if (!data.tracks.items.length) {
+          alert("該当する曲が見つかりません");
+          return;
+        }
+        displayTracks(data.tracks.items);
+      }
+    }
+
+    // アーティスト検索結果を表示
+    function displayArtists(artists) {
+      const ranking = document.getElementById("ranking");
+      ranking.innerHTML = "";
+
+      artists.forEach((artist, index) => {
+        const artistCard = document.createElement("div");
+        artistCard.className = "track";
+
+        artistCard.innerHTML = `
+          <p><strong>Rank ${index + 1}</strong></p>
+          <img src="${artist.images[0]?.url || 'https://via.placeholder.com/200'}" alt="${artist.name}" onclick="window.open('${artist.external_urls.spotify}', '_blank')">
+          <p>${artist.name}</p>
+        `;
+
+        ranking.appendChild(artistCard);
+      });
+    }
+
+    // 曲検索結果を表示
+    function displayTracks(tracks) {
+      const ranking = document.getElementById("ranking");
+      ranking.innerHTML = "";
+
+      tracks.forEach((track, index) => {
+        const trackCard = document.createElement("div");
+        trackCard.className = "track";
+
+        trackCard.innerHTML = `
+          <p><strong>${index + 1}位</strong></p>
+          <img src="${track.album.images[0]?.url || 'https://via.placeholder.com/200'}" alt="${track.name}" onclick="window.open('${track.external_urls.spotify}', '_blank')">
+          <p>${track.name}</p>
+          <p>アーティスト: ${track.artists.map((artist) => artist.name).join(", ")}</p>
+        `;
+
+        ranking.appendChild(trackCard);
+      });
+    }
+  </script>
+</body>
+</html>
