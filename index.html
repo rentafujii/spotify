@@ -171,7 +171,7 @@
         artistCard.className = "track";
 
         artistCard.innerHTML = `
-          <p><strong>Rank ${index + 1}</strong></p>
+          <p><strong>${index + 1}位</strong></p>
           <img src="${artist.images[0]?.url || 'https://via.placeholder.com/200'}" alt="${artist.name}" onclick="window.open('${artist.external_urls.spotify}', '_blank')">
           <p>${artist.name}</p>
         `;
